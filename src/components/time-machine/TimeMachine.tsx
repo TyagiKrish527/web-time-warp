@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Clock3,
-  ExternalLink, FastForward, Globe2, History, Maximize2, Pause, Play,
-  RefreshCw, RotateCcw, Search, Sparkles, Volume2, VolumeX, X,
+  ExternalLink, FastForward, Globe2, History, Play,
+  RefreshCw, Search, Sparkles, Volume2, VolumeX, X,
 } from "lucide-react";
 import portalImage from "@/assets/time-portal.jpg";
 import { Button } from "@/components/ui/button";
@@ -112,11 +112,12 @@ function Changes({ era }: { era: Era }) {
 
 function Evolution() {
   const [active, setActive] = useState(0);
+  const activeStage = evolution[active] ?? evolution[0];
   return (
     <section className="evolution" id="evolution" aria-labelledby="evolution-title">
       <div className="section-kicker"><span>05</span><div><small>SYSTEM MAP</small><h2 id="evolution-title">Internet evolution</h2></div></div>
       <div className="evolution__path">{evolution.map(([name], index) => <button key={name} data-active={active === index} onClick={() => setActive(index)}><i>{String(index + 1).padStart(2, "0")}</i><span>{name}</span>{index < evolution.length - 1 && <ArrowRight />}</button>)}</div>
-      <div className="evolution__detail"><small>STAGE {String(active + 1).padStart(2, "0")}</small><h3>{evolution[active][0]}</h3><p>{evolution[active][1]}</p></div>
+      <div className="evolution__detail"><small>STAGE {String(active + 1).padStart(2, "0")}</small><h3>{activeStage[0]}</h3><p>{activeStage[1]}</p></div>
     </section>
   );
 }
@@ -137,6 +138,7 @@ export function TimeMachine() {
   const [year, setYear] = useState(1990);
   const [entered, setEntered] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [destination, setDestination] = useState<Era>(eras[0] ?? eraForYear(1990));
   const [sound, setSound] = useState(false);
   const era = useMemo(() => eraForYear(year), [year]);
 
@@ -151,16 +153,25 @@ export function TimeMachine() {
   };
   const travel = (next: Era | number) => {
     const target = typeof next === "number" ? next : next.start;
+    const targetEra = typeof next === "number" ? eraForYear(next) : next;
+    setDestination(targetEra);
     setTransitioning(true); tone();
-    window.setTimeout(() => { setYear(target); setEntered(true); window.scrollTo({ top: window.innerHeight * 0.72, behavior: "smooth" }); }, 260);
-    window.setTimeout(() => setTransitioning(false), 850);
+    window.setTimeout(() => { setYear(target); setEntered(true); }, 620);
+    window.setTimeout(() => {
+      document.querySelector("#timeline")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 780);
+    window.setTimeout(() => setTransitioning(false), 1450);
   };
   const step = (direction: number) => {
     const index = eras.findIndex((item) => item.id === era.id);
     const nextIndex = (index + direction + eras.length) % eras.length;
-    travel(eras[nextIndex]);
+    const nextEra = eras[nextIndex];
+    if (nextEra) travel(nextEra);
   };
-  const randomTravel = () => travel(eras[Math.floor(Math.random() * eras.length)]);
+  const randomTravel = () => {
+    const randomEra = eras[Math.floor(Math.random() * eras.length)];
+    if (randomEra) travel(randomEra);
+  };
 
   return (
     <main className="time-machine" data-theme={entered ? era.theme : "base"}>
@@ -185,7 +196,17 @@ export function TimeMachine() {
       </section>
 
       {entered && <Controls era={era} year={year} onYear={(value) => travel(clampYear(value))} onStep={step} />}
-      <div className="transition" data-active={transitioning} aria-hidden="true"><span /><div><RotateCcw /><b>TEMPORAL SHIFT</b><small>{era.start} / {era.shortLabel}</small></div></div>
+      <div className="transition" data-active={transitioning} data-destination={destination.theme} aria-hidden="true">
+        <div className="transition__flash" />
+        <div className="transition__tunnel"><i /><i /><i /><i /><i /></div>
+        <div className="transition__grid" />
+        <div className="transition__readout">
+          <small>TEMPORAL COORDINATES LOCKED</small>
+          <b>{destination.start}</b>
+          <strong>{destination.label}</strong>
+          <span><i /> RECONSTRUCTING INTERFACE <i /></span>
+        </div>
+      </div>
       <footer><span>INTERNET TIME MACHINE</span><small>An interactive archive of the networked world.</small><span>1990 — 2050</span></footer>
     </main>
   );
