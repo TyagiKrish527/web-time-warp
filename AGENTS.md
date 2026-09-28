@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Project architecture
+
+- Keep era content in `src/data/eras.ts` and all travel UI state local to the time-machine feature so static data can later be replaced cleanly.
